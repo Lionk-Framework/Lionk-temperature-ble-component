@@ -24,11 +24,17 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
     private const string DataServiceId = "00000007-7669-6163-616d-2d63616c6563";
     private const string DataCharacteristicId = "00000008-7669-6163-616d-2d63616c6563";
     private const double LowVoltageThreshold = 3.6;
+    private const int DefaultPeriod = 5;
 
     /// <summary>
     /// Field that indicates the name part of the device
     /// </summary>
     public const string CommonName = "Lionk-Temp";
+
+    public BleTemperature()
+    {
+        Period = TimeSpan.FromSeconds(DefaultPeriod);
+    }
 
     /// <summary>
     /// Gets or sets the id of the Ble service.

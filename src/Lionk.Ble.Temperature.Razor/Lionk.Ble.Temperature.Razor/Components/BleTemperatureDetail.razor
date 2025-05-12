@@ -18,7 +18,7 @@
 
     <MudItem xs="12" style="display: flex;">
         <MudText style="flex: 1;" Typo="Typo.h6">Temperature</MudText>
-        <MudText style="flex: 1;" Typo="Typo.body1">@Component.Measures[(int)Component.TemperatureType].Value @Component.Measures[(int)Component.TemperatureType].Unit</MudText>
+        <MudText style="flex: 1;" Typo="Typo.body1">@Component.GetTemperature() @Component.Measures[(int)Component.TemperatureType].Unit </MudText>
     </MudItem>
 
     <MudItem xs="12" style="display: flex;">
