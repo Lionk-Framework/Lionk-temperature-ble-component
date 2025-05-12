@@ -6,9 +6,15 @@
 <MudGrid>
 
     <MudItem xs="12" style="display: flex;">
+        <MudText style="flex: 1;" Typo="Typo.h6">Last notification</MudText>
+        <MudText style="flex: 1;" Typo="Typo.body1">@Component.LastNotifyDateTime.ToString("f")</MudText>
+    </MudItem>
+
+    <MudItem xs="12" style="display: flex;">
         <MudText style="flex: 1;" Typo="Typo.h6">Battery</MudText>
         <MudText style="flex: 1;" Typo="Typo.body1">@Component.GetPercentage()%</MudText>
     </MudItem>
+
 
     <MudItem xs="12" style="display: flex;">
         <MudText style="flex: 1;" Typo="Typo.h6">Temperature</MudText>
