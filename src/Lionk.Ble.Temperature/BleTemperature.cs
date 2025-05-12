@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace Lionk.Ble.Temperature;
 
 [NamedElement("BleTemperatureSensor", "A Ble temperature sensor")]
-public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatterySensor, IOnCharacteristicData
+public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatterySensor, IBleCallback
 {
     private readonly Queue<double> _lastTemperatures = new();
     private readonly Queue<double> _lastVoltages = new();
@@ -15,23 +15,33 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
     private BleService? _bleService;
     private Guid _bleServiceId;
     private string? _deviceAddress;
-    private DateTime _lastTimestamp;
     private double _temperature;
     private double _voltage;
-    private bool _alreadyRegistreRequested = false;
+    private bool _registrationAlreadyRequested = false;
 
-    public const string CommonName = "Lionk-Temp";
     private const string VersionServiceId = "00000005-7669-6163-616d-2d63616c6563";
     private const string VersionCharacteristicId = "00000006-7669-6163-616d-2d63616c6563";
     private const string DataServiceId = "00000007-7669-6163-616d-2d63616c6563";
     private const string DataCharacteristicId = "00000008-7669-6163-616d-2d63616c6563";
+    private const double LowVoltageThreshold = 3.6;
 
+    /// <summary>
+    /// Field that indicates the name part of the device
+    /// </summary>
+    public const string CommonName = "Lionk-Temp";
+
+    /// <summary>
+    /// Gets or sets the id of the Ble service.
+    /// </summary>
     public Guid BleServiceId
     {
         get => _bleServiceId;
         set => SetField(ref _bleServiceId, value);
     }
 
+    /// <summary>
+    /// Gets or sets the Ble service.
+    /// </summary>
     [JsonIgnore]
     public BleService? BleService
     {
@@ -47,6 +57,9 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
         }
     }
 
+    /// <summary>
+    /// Gets or sets the device address.
+    /// </summary>
     public string DeviceAddress
     {
         get => _deviceAddress ?? string.Empty;
@@ -61,6 +74,11 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
         }
     }
 
+    /// <summary>
+    /// Gets or sets the last notify date time.
+    /// </summary>
+    public DateTime LastNotifyDateTime { get; set; }
+
     /// <inheritdoc/>
     public override void Measure()
     {
@@ -70,30 +88,30 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
             SetTemperature(average);
             Console.WriteLine($"Mesure moyenne : {average}°C");
         }
+
         base.Measure();
     }
 
-    public double GetPercentage()
+    /// <inheritdoc/>
+    public double GetPercentage(int nbDecimal = 0)
     {
-        return _voltage - 3.5 / (4.2 - 3.5) * 100;
+        return Math.Round(((_voltage - 3.5) / (4.2 - 3.5) * 100), nbDecimal);
     }
 
-    public double GetTemperature()
+    /// <inheritdoc/>
+    public double GetVoltage(int nbDecimal = 1)
     {
-        return _temperature;
+        return Math.Round(_voltage, nbDecimal);
     }
 
-    public double GetVoltage()
-    {
-        return _voltage;
-    }
-
+    /// <inheritdoc/>
     public bool IsLowVoltage()
     {
-        return _voltage <= 3.6;
+        return _voltage <= LowVoltageThreshold;
     }
 
-    public void OnNewData(string uuid, byte[] data)
+    /// <inheritdoc/>
+    public void OnNotify(string uuid, byte[] data)
     {
         // byte payloadVersion = data[0];
         int rawTemperature = (data[1] << 8) | data[2];
@@ -108,8 +126,10 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
         if (_lastVoltages.Count >= MaxValues)
             _lastVoltages.Dequeue();
         _lastVoltages.Enqueue(_voltage);
+        LastNotifyDateTime = DateTime.UtcNow;
     }
 
+    /// <inheritdoc/>
     public void OnRegistered()
     {
         if (_deviceAddress is not null)
@@ -118,16 +138,19 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
         }
     }
 
+    /// <inheritdoc/>
     public void OnDisconnected()
     {
         Console.WriteLine("Disonnected");
     }
 
+    /// <inheritdoc/>
     public override bool CanExecute => _bleService is not null;
 
+    /// <inheritdoc/>
     public override void InitializeSubComponents(IComponentService? componentService = null)
     {
-        if (componentService is not null && !_alreadyRegistreRequested)
+        if (componentService is not null && !_registrationAlreadyRequested)
         {
             BleService = (BleService?)componentService.GetInstanceById(_bleServiceId);
             Register();
@@ -140,7 +163,8 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
         {
             return;
         }
+
         _bleService.RegisterDevice(_deviceAddress, this);
-        _alreadyRegistreRequested = true;
+        _registrationAlreadyRequested = true;
     }
 }
