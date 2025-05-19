@@ -49,6 +49,7 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
     /// Gets or sets the Ble service.
     /// </summary>
     [JsonIgnore]
+    [IdIs("BleServiceId")]
     public BleService? BleService
     {
         get => _bleService;
@@ -152,16 +153,6 @@ public class BleTemperature : BaseTemperatureSensor, ITemperatureSensor, IBatter
 
     /// <inheritdoc/>
     public override bool CanExecute => _bleService is not null;
-
-    /// <inheritdoc/>
-    public override void InitializeSubComponents(IComponentService? componentService = null)
-    {
-        if (componentService is not null && !_registrationAlreadyRequested)
-        {
-            BleService = (BleService?)componentService.GetInstanceById(_bleServiceId);
-            Register();
-        }
-    }
 
     private void Register()
     {
